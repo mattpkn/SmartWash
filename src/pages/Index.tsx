@@ -3,23 +3,33 @@ import { Header } from "@/components/layout/Header";
 import { AvailabilityOverview } from "@/components/machines/AvailabilityOverview";
 import { MachineCard } from "@/components/machines/MachineCard";
 import { useNavigate } from "react-router-dom";
-
-const mockMachines = [
-  { id: "1", name: "Laverie 1", type: "lave-linge" as const, status: "libre" as const, timeRemaining: 18 },
-  { id: "2", name: "Sèche-linge 2", type: "seche-linge" as const, status: "en-cours" as const, timeRemaining: 12 },
-  { id: "3", name: "Laverie 2", type: "lave-linge" as const, status: "occupe" as const, timeRemaining: 25 },
-  { id: "4", name: "Laverie 3", type: "lave-linge" as const, status: "libre" as const, timeRemaining: 0 },
-];
+import { useMachines } from "@/context/MachinesContext";
 
 export default function Index() {
   const navigate = useNavigate();
+  const { machines, selectMachine } = useMachines();
 
   const handleReserve = (machineId: string) => {
+    selectMachine(machineId);
     navigate(`/paiement/${machineId}`);
   };
 
   const handleTrack = (machineId: string) => {
+    selectMachine(machineId);
     navigate(`/suivi/${machineId}`);
+  };
+
+  const laveLingeMachines = machines.filter((m) => m.type === "lave-linge");
+  const secheLingeMachines = machines.filter((m) => m.type === "seche-linge");
+
+  const laveLingeStats = {
+    libre: laveLingeMachines.filter((m) => m.status === "libre").length,
+    occupe: laveLingeMachines.filter((m) => m.status !== "libre").length,
+  };
+
+  const secheLingeStats = {
+    libre: secheLingeMachines.filter((m) => m.status === "libre").length,
+    occupe: secheLingeMachines.filter((m) => m.status !== "libre").length,
   };
 
   return (
@@ -28,12 +38,12 @@ export default function Index() {
       
       <div className="px-4 py-6 space-y-4">
         <AvailabilityOverview
-          laveLinge={{ libre: 3, occupe: 2 }}
-          secheLinge={{ libre: 2, occupe: 1 }}
+          laveLinge={laveLingeStats}
+          secheLinge={secheLingeStats}
         />
 
         <div className="space-y-3">
-          {mockMachines.map((machine) => (
+          {machines.map((machine) => (
             <MachineCard
               key={machine.id}
               {...machine}

@@ -1,8 +1,7 @@
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { WashingMachine, Wind } from "lucide-react";
-
-export type MachineStatus = "libre" | "occupe" | "en-cours";
+import type { MachineStatus } from "@/lib/machines";
 
 interface MachineCardProps {
   id: string;

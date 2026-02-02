@@ -5,6 +5,8 @@ import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Check, CreditCard, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useMachines } from "@/context/MachinesContext";
+import { useHistory } from "@/context/HistoryContext";
 
 type PaymentMethod = "visa" | "apple" | "paypal" | "wallet";
 
@@ -16,12 +18,25 @@ const paymentMethods = [
 ];
 
 export default function Payment() {
-  const { machineId } = useParams();
+  const { machineId } = useParams<{ machineId: string }>();
   const navigate = useNavigate();
+  const { machines, selectedMachine } = useMachines();
+  const { addFromMachine } = useHistory();
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>("visa");
 
+  const machine =
+    selectedMachine ?? machines.find((m) => m.id === machineId);
+
   const handleConfirm = () => {
-    navigate(`/suivi/${machineId}`);
+    if (!machine) {
+      navigate("/");
+      return;
+    }
+
+    // Ajoute une entrée dans l'historique à partir de la machine sélectionnée
+    addFromMachine(machine);
+
+    navigate(`/suivi/${machine.id}`);
   };
 
   return (
@@ -31,19 +46,25 @@ export default function Payment() {
       <div className="px-4 py-6 space-y-6">
         <div className="space-y-4">
           <h2 className="text-lg font-semibold">Paiement de votre lavage</h2>
-          
+
           <div className="bg-card rounded-2xl p-4 border border-border space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Machine sélectionnée :</span>
-              <span className="font-medium">Lave-linge 1</span>
+              <span className="font-medium">
+                {machine ? machine.name : "Machine inconnue"}
+              </span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Durée :</span>
-              <span className="font-medium">30 min</span>
+              <span className="font-medium">
+                {machine ? `${machine.duration} min` : "—"}
+              </span>
             </div>
             <div className="flex justify-between text-sm pt-2 border-t border-border">
               <span className="text-muted-foreground">Total :</span>
-              <span className="font-bold text-lg">4,50 €</span>
+              <span className="font-bold text-lg">
+                {machine ? `${machine.price.toFixed(2)} €` : "—"}
+              </span>
             </div>
           </div>
         </div>

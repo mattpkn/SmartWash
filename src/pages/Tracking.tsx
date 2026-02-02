@@ -1,12 +1,29 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import { MobileLayout } from "@/components/layout/MobileLayout";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Bell } from "lucide-react";
+import { useMachines } from "@/context/MachinesContext";
+import { scheduleWashFinishedNotification } from "@/lib/notifications";
+import { toast } from "@/components/ui/use-toast";
 
 export default function Tracking() {
-  const [timeRemaining, setTimeRemaining] = useState(12 * 60 + 15); // 12:15 in seconds
-  
+  const { machineId } = useParams<{ machineId: string }>();
+  const { machines, selectedMachine } = useMachines();
+
+  const machine =
+    selectedMachine ?? machines.find((m) => m.id === machineId);
+
+  const totalDurationMinutes = machine?.duration ?? 30;
+  const initialRemainingSeconds = (machine?.timeRemaining ?? 12) * 60 + 15;
+
+  const [timeRemaining, setTimeRemaining] = useState(initialRemainingSeconds);
+
+  useEffect(() => {
+    setTimeRemaining(initialRemainingSeconds);
+  }, [initialRemainingSeconds]);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setTimeRemaining((prev) => (prev > 0 ? prev - 1 : 0));
@@ -16,7 +33,32 @@ export default function Tracking() {
 
   const minutes = Math.floor(timeRemaining / 60);
   const seconds = timeRemaining % 60;
-  const progress = ((30 * 60 - timeRemaining) / (30 * 60)) * 100;
+  const totalSeconds = totalDurationMinutes * 60;
+  const progress =
+    totalSeconds > 0
+      ? ((totalSeconds - timeRemaining) / totalSeconds) * 100
+      : 0;
+
+  const handleAlertClick = async () => {
+    if (timeRemaining <= 0) return;
+    
+    try {
+      await scheduleWashFinishedNotification(
+        timeRemaining,
+        machine?.name ?? undefined,
+      );
+      toast({
+        title: "Alerte programmée",
+        description: `Vous recevrez une notification dans ${Math.floor(timeRemaining / 60)} min ${timeRemaining % 60} s.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de programmer l'alerte. Veuillez réessayer.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <MobileLayout>
@@ -27,11 +69,15 @@ export default function Tracking() {
           <h2 className="text-lg font-semibold">Suivi de votre lavage</h2>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Machine :</span>
-            <span className="font-medium">Lave-linge 1</span>
+            <span className="font-medium">
+              {machine ? machine.name : "Machine inconnue"}
+            </span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Programme :</span>
-            <span className="font-medium">Eco 30°C</span>
+            <span className="font-medium">
+              {machine ? machine.program : "—"}
+            </span>
           </div>
         </div>
 
@@ -86,7 +132,12 @@ export default function Tracking() {
           </div>
         </div>
 
-        <Button variant="default" className="w-full h-14 text-lg">
+        <Button
+          variant="default"
+          className="w-full h-14 text-lg"
+          onClick={handleAlertClick}
+          disabled={timeRemaining <= 0}
+        >
           Recevoir une alerte
         </Button>
       </div>

@@ -12,10 +12,16 @@ export function Header({ title, showBack, userName }: HeaderProps) {
 
   if (userName) {
     return (
-      <header className="bg-primary text-primary-foreground rounded-b-3xl px-6 pt-12 pb-8">
-        <h1 className="text-2xl font-bold mb-1">SmartWash</h1>
-        <p className="text-primary-foreground/90 text-lg">
-          Bonjour {userName}.
+      <header
+        className="text-primary-foreground rounded-b-3xl px-6 pt-12 pb-8 shadow-md"
+        style={{ backgroundImage: "var(--gradient-header)" }}
+      >
+        <p className="text-xs uppercase tracking-[0.2em] opacity-80 mb-1">
+          SmartWash
+        </p>
+        <h1 className="text-2xl font-bold mb-1">Bonjour {userName}.</h1>
+        <p className="text-primary-foreground/90 text-sm">
+          Voici la disponibilité des machines dans votre laverie.
         </p>
       </header>
     );
